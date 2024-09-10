@@ -2,6 +2,8 @@
 !data/
 !public/
 !views/
+!utility/
+!routes/
 !app.js
 !package-lock.json
 !package.json
