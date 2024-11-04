@@ -10,7 +10,7 @@
     <%- include('includes/side-drawer') %>
     <main>
       <h1>Share your favorite restaurant!</h1>
-      <form action="/recommend" method="POST">
+      <form action="/recommend" method="POST" enctype="multipart/form-data">
         <div class="form-control">
           <label for="name">Restaurant name</label>
           <input type="text" id="name" name="name" required />
@@ -32,6 +32,11 @@
         <div class="form-control">
           <label for="website">Restaurant website</label>
           <input type="url" id="website" name="website" />
+        </div>
+        <div class="form-control">
+          <label for="image">Food/Restaurant Photo</label>
+          <input type="file" id="image" name="image" accept="image/png, image/jpg">
+          <!-- <img id="image-preview" src="" alt="Selected image"> -->
         </div>
         <div class="form-control">
           <label for="description">Why do you recommend it?</label>

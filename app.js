@@ -4,15 +4,17 @@ const express = require("express");
 
 const defaultRoutes = require('./routes/default');
 const restaurantRoutes = require('./routes/restaurants');
+const db = require('./database/database');
 
 const app = express();
-const port = process.env.PORT || 3000;
 
 app.set("views", path.join(__dirname, "views"));
 app.set("view engine", "ejs");
 
 app.use(express.static("public"));
+app.use("/images", express.static("images"));
 app.use(express.urlencoded({ extended: false }));
+
 
 app.use('/', defaultRoutes);
 app.use('/', restaurantRoutes);
@@ -25,4 +27,6 @@ app.use(function (error, req, res, next) {
   res.status(500).render("500");
 });
 
-app.listen(port);
+db.connectToDatabase().then(function () {
+  app.listen(3000);
+});

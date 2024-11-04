@@ -1,11 +1,26 @@
-const express = require("express");
-const uuid = require("uuid");
+const express = require("express")
+const multer = require('multer');
 
-const resData = require("../utility/restaurant-data");
+const mongodb = require("mongodb");
+
+const ObjectId = mongodb.ObjectId;
+
+const db = require('../database/database');
+
+const storageConfig = multer.diskStorage({
+  destination: function(req, file, cb) {
+    cb(null, 'images');
+  },
+  filename: function(req, file, cb) {
+    cb(null, Date.now() + '-' + file.originalname);
+  } 
+});
+
+const upload = multer({ storage: storageConfig});
 
 const router = express.Router();
 
-router.get("/restaurants", function (req, res) {
+router.get("/restaurants", async function (req, res) {
   //const htmlFilePath = path.join(__dirname, "views", "restaurants.html");
   //res.sendFile(htmlFilePath);
   let order = req.query.order;
@@ -18,7 +33,7 @@ router.get("/restaurants", function (req, res) {
     nextOrder ='asc';
   }
 
-  const storedRestaurants = resData.getStoredRestaurants();
+  const storedRestaurants = await db.getDb().collection('Restaurants').find().toArray();
 
   storedRestaurants.sort(function(resA, resB) { 
     if (order === 'asc' && resA.name > resB.name || order === 'desc' && resB.name > resA.name) {
@@ -34,20 +49,17 @@ router.get("/restaurants", function (req, res) {
   });
 });
 
-router.get("/restaurants/:id", function (req, res) {
-  const restaurantId = req.params.id; //variable for the generated id
+router.get("/restaurants/:id", async function (req, res) {
+  const restaurantId = req.params.id;
 
-  const storedRestaurants = resData.getStoredRestaurants();
-  for (const restaurant of storedRestaurants) {
-    if (restaurant.id === restaurantId) {
-      return res.render("restaurant-detail", {
-        rid: restaurantId,
-        restaurant: restaurant,
-      });
-    }
+  const storedRestaurantsItem = await db.getDb().collection('Restaurants').findOne({_id: new ObjectId(restaurantId)});
+
+
+  if (!storedRestaurantsItem) {
+    return res.status(404).render("404");
   }
 
-  res.status(404).render("404");
+  res.render("restaurant-detail", {restaurant: storedRestaurantsItem});
 });
 
 router.get("/recommend", function (req, res) {
@@ -56,15 +68,21 @@ router.get("/recommend", function (req, res) {
   res.render("recommend");
 });
 
-router.post("/recommend", function (req, res) {
-  const restaurant = req.body;
-  restaurant.id = uuid.v4();
-  const restaurantsInStorage = resData.getStoredRestaurants();
+router.post("/recommend", upload.single('image'), async function (req, res) {
+  const restaurants = req.body;
+  const uploadedImageFile = req.file;
 
-  restaurantsInStorage.push(restaurant);
+  const restaurantInfo = {
+    name: restaurants.name,
+    address: restaurants.address,
+    cuisine: restaurants.cuisine,
+    website: restaurants.website,
+    description: restaurants.description,
+    imagePath: uploadedImageFile.path
+  };
 
-  resData.updateRestaurantsInStorage(restaurantsInStorage);
-
+  
+  const result = await db.getDb().collection("Restaurants").insertOne(restaurantInfo);
   res.redirect("/confirm");
 });
 
